@@ -1,6 +1,6 @@
 # MultiTask
 
-MultiTask is simple task manager. you can use it to multiple tasks and receive result from these tasks.
+MultiTask is simple task manager. you can use it to process multiple tasks and receive result from these tasks.
 
 # Quick start
 
