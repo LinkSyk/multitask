@@ -4,12 +4,15 @@ import (
 	"sync"
 )
 
-type Source func(ch chan<- interface{})
+// Task represent a single task.
+// resultCh receive result from task, you also can ingore it if you have nothing to send.
+type Task func(resultCh chan<- interface{})
 
-type Sink func(msg interface{})
+// ResultFunc receive all result from all task.
+type ResultFunc func(result interface{})
 
 type MultiTask struct {
-	queue     []Source
+	queue     []Task
 	msgCh     chan interface{}
 	done      chan struct{}
 	queueSize int
@@ -24,6 +27,7 @@ func WithQueueSize(size int) TaskOpt {
 	}
 }
 
+// NewMultiTask create MultiTask instance
 func NewMultiTask(opts ...TaskOpt) *MultiTask {
 	t := &MultiTask{
 		queueSize: 400,
@@ -37,36 +41,43 @@ func NewMultiTask(opts ...TaskOpt) *MultiTask {
 	return t
 }
 
-func (t *MultiTask) Do(w Source) {
-	t.queue = append(t.queue, w)
+// Do accept a task, push it to task queue, execute until MultiTask.Wait() is called
+func (t *MultiTask) Do(task Task) {
+	t.queue = append(t.queue, task)
 }
 
-func (t *MultiTask) Recv(s Sink) {
+// Fetch set a result function to receive result from task function.
+func (t *MultiTask) Fetch(fn ResultFunc) {
 	t.isSetRecv = true
 	go func() {
 		for msg := range t.msgCh {
-			if s == nil {
+			if fn == nil {
 				return
 			}
-			s(msg)
+			fn(msg)
 		}
 		t.done <- struct{}{}
 	}()
 }
 
+// Wait() block until all tasks done
 func (t *MultiTask) Wait() {
 	if !t.isSetRecv {
-		panic("not set Recv function!")
+		t.Fetch(doNothing)
 	}
 	var wg sync.WaitGroup
 	wg.Add(len(t.queue))
-	for _, s := range t.queue {
-		go func(s Source) {
+	for _, task := range t.queue {
+		task := task
+		go func() {
 			defer wg.Done()
-			s(t.msgCh)
-		}(s)
+			task(t.msgCh)
+		}()
 	}
 	wg.Wait()
 	close(t.msgCh)
 	<-t.done
+}
+
+func doNothing(msg interface{}) {
 }
