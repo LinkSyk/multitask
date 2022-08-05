@@ -21,6 +21,8 @@ type MultiTask struct {
 
 type TaskOpt func(t *MultiTask)
 
+// WithQueueSize control the size of internal resultCh.
+// in most case, you can ignore it.
 func WithQueueSize(size int) TaskOpt {
 	return func(t *MultiTask) {
 		t.queueSize = size
