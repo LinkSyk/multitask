@@ -7,7 +7,7 @@ MultiTask is simple task manager. you can use it to multiple tasks and receive r
 **create two task to count number.**
 
 ```go
-mt := NewMultiTask(WithQueueSize(5000))
+mt := NewMultiTask()
 
 mt.Do(func(ch chan<- interface{}) {
     for i := 0; i < 100; i++ {
@@ -31,7 +31,7 @@ mt.Wait()
 **create two task, not to recv.**
 
 ```go
-mt := NewMultiTask(WithQueueSize(5000))
+mt := NewMultiTask()
 
 mt.Do(func(ch chan<- interface{}) {
     for i := 0; i < 100; i++ {
